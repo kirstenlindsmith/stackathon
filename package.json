@@ -1,0 +1,19 @@
+{
+  "name": "stackathon",
+  "version": "1.0.0",
+  "description": "a little game",
+  "main": "index.js",
+  "scripts": {
+    "start": "python -m SimpleHTTPServer"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kirstenlindsmith/stackathon.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kirstenlindsmith/stackathon/issues"
+  },
+  "homepage": "https://github.com/kirstenlindsmith/stackathon#readme"
+}
