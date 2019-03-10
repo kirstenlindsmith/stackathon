@@ -522,6 +522,9 @@ function create() {
 //////////////////////////////////////////////////////////////////////
 
 function update(time, delta) {
+  if(player.anims.currentFrame){
+    console.log(player.anims.currentFrame.textureFrame)
+  }
   player.anims.play('turn');
   this.input.on(
     'pointerdown',
@@ -711,7 +714,7 @@ function update(time, delta) {
       bombs.children.iterate(child => {
         if (child) {
           const bombHeight = child.y;
-          if (bombHeight > 281) {
+          if (bombHeight > 320) {
             child.disableBody(true, true);
             child.enableBody(
               true,
