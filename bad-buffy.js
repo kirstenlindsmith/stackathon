@@ -23,6 +23,9 @@ const game = new Phaser.Game(config);
 
 let player;
 let buffy;
+let buffyBG;
+let trees;
+let smallerTrees;
 let stars;
 let bombs;
 let bomb;
@@ -39,10 +42,13 @@ let shieldCursor;
 let githubButton;
 let musicButton;
 let pauseButton;
-let difficulty;
+let settingsButton;
+let settingsOpen;
+let settingsMenu;
 let difficultyLEVEL;
 let difficultyUP;
 let difficultyDOWN;
+let flyingButton;
 let score = 0;
 let scoreText;
 let startText;
@@ -74,7 +80,7 @@ let flying = false;
 let musicPaused = false;
 let controlsWorking = false;
 // const lasersEnabled = false;
-let bombsEnabled = true;
+let bombsEnabled = true
 let numBombs = 10;
 const playerStart = 40; //play: 40, test end: 3000
 
@@ -93,29 +99,42 @@ if (cheatMode) {
 //////////////////////////////////////////////////////////////////////
 
 function preload() {
+  this.load.tilemapTiledJSON('map', 'assets/BadBuffy/finalMap.json');
   this.load.image('tiles', 'assets/BadBuffy/mainTileset.png');
   this.load.image('decorations', 'assets/BadBuffy/erasedTileset.png');
-  this.load.image('mountainsandclouds', 'assets/BadBuffy/mountainsandclouds.png');
+  this.load.image(
+    'mountainsandclouds',
+    'assets/BadBuffy/mountainsandclouds.png'
+  );
+  this.load.image('tree', 'assets/BadBuffy/tallTree.png');
+  this.load.image('smallerTree', 'assets/BadBuffy/mediumTree.png')
   this.load.image('star', 'assets/basic/star.png');
   this.load.image('bomb', 'assets/basic/bomb.png');
   this.load.image('shield', 'assets/BadBuffy/shield.png');
   // this.load.image('blood', 'assets/BadBuffy/particle.png');
   // this.load.image('laser', 'assets/BadBuffy/laser.png');
   this.load.image('speechBubble', 'assets/BadBuffy/speechBubble.png');
-  this.load.image('instructionsPrompt', 'assets/BadBuffy/instructionsPrompt.png');
-  this.load.image('instructions', 'assets/BadBuffy/instructionsNOLASERS2.png');
-  this.load.image('gameOver', 'assets/BadBuffy/gameOver.png')
-  this.load.image('paused', 'assets/BadBuffy/pausedMessage.png')
+  this.load.image(
+    'instructionsPrompt',
+    'assets/BadBuffy/instructionsPrompt.png'
+  );
+  this.load.image('instructions', 'assets/BadBuffy/instructionsNOLASERS.png');
+  this.load.image('gameOver', 'assets/BadBuffy/gameOver.png');
+  this.load.image('paused', 'assets/BadBuffy/pausedMessage.png');
   this.load.image('replayButton', 'assets/BadBuffy/replayButton.png');
   this.load.image('winBubble', 'assets/BadBuffy/winBubble.png');
+  this.load.image('buffyBG', 'assets/BadBuffy/bush.png');
   this.load.image('github', 'assets/BadBuffy/github.png');
   this.load.image('musicButton', 'assets/BadBuffy/musicButton.png');
   this.load.image('musicButtonEmpty', 'assets/BadBuffy/musicButtonEmpty.png');
   this.load.image('pauseButton', 'assets/BadBuffy/pauseButton.png');
-  this.load.image('difficulty', 'assets/BadBuffy/difficulty.png');
+  this.load.image('settingsButton', 'assets/BadBuffy/settings.png')
+  this.load.image('settingsMenu', 'assets/BadBuffy/settingsMenu.png')
+  this.load.image('flyingO', 'assets/BadBuffy/flyingO.png')
+  this.load.image('flyingX', 'assets/BadBuffy/flyingX.png')
   this.load.image('difficultyUP', 'assets/BadBuffy/difficultyUP.png');
   this.load.image('difficultyDOWN', 'assets/BadBuffy/difficultyDOWN.png');
-  this.load.tilemapTiledJSON('map', 'assets/BadBuffy/MAP2.json');
+
   // this.load.spritesheet('dude', 'assets/basic/kel.png', {
   //   frameWidth: 32,
   //   frameHeight: 48,
@@ -124,9 +143,13 @@ function preload() {
     frameWidth: 16,
     frameHeight: 28,
   });
-  this.load.spritesheet('buffy', 'assets/BadBuffy/buffy.png', {
-    frameWidth: 43,
-    frameHeight: 32,
+  // this.load.spritesheet('buffy', 'assets/BadBuffy/buffy.png', {
+  //   frameWidth: 43,
+  //   frameHeight: 32,
+  // });
+  this.load.spritesheet('buffy', 'assets/BadBuffy/meow.png', {
+    frameWidth: 19,
+    frameHeight: 21,
   });
   this.load.spritesheet('startText', 'assets/BadBuffy/clickToStart2.png', {
     frameWidth: 351,
@@ -204,6 +227,33 @@ function create() {
   const GroundLayer = map.createStaticLayer('GroundLayer', tileset, 0, 0);
 
   //////////////////////////////////////////////////////////////////////
+  // EXTRA TREES
+  //////////////////////////////////////////////////////////////////////
+  trees = this.physics.add.staticGroup({
+    allowGravity: false,
+  });
+  smallerTrees = this.physics.add.staticGroup({
+    allowGravity: false,
+  })
+
+  trees.create(3194, 257, 'tree').setScale(1.5);
+  trees.create(3110, 257, 'tree').setScale(1.5);
+  trees.create(2655, 258, 'tree').setScale(1.5);
+  trees.create(2540, 210, 'tree').setScale(1.5);
+  trees.create(2240, 258, 'tree').setScale(1.5);
+  trees.create(1947, 242, 'tree').setScale(1.5);
+  trees.create(1820, 258, 'tree').setScale(1.5);
+  trees.create(1485, 258, 'tree').setScale(1.5);
+  trees.create(1247, 226, 'tree').setScale(1.5)
+  smallerTrees.create(1460, 261, 'smallerTree').setScale(1.5)
+  smallerTrees.create(1150, 261, 'smallerTree').setScale(1.5)
+  trees.create(985, 273, 'tree').setScale(1.5)
+  smallerTrees.create(935, 277, 'smallerTree').setScale(1.5)
+  trees.create(550, 258, 'tree').setScale(1.5)
+  trees.create(249, 258, 'tree').setScale(1.5)
+  smallerTrees.create(414, 213, 'smallerTree').setScale(1.5)
+
+  //////////////////////////////////////////////////////////////////////
   // PLAYER
   //////////////////////////////////////////////////////////////////////
 
@@ -247,7 +297,9 @@ function create() {
   /////////////////////////////////////////////////////////////////////
   // BUFFY
   //////////////////////////////////////////////////////////////////////
-  buffy = this.physics.add.sprite(3170, 270, 'buffy');
+  buffyBG = this.physics.add.staticSprite(3166, 270, 'buffyBG').setScale(1.5);
+
+  buffy = this.physics.add.sprite(3170, 274, 'buffy');
   this.anims.create({
     key: 'curl',
     frames: this.anims.generateFrameNumbers('buffy', { start: 0, end: 1 }),
@@ -359,7 +411,7 @@ function create() {
   // MESSAGES & BUTTONS
   //////////////////////////////////////////////////////////////////////
 
-  scoreText = this.add.text(15, 15, 'score: 0', {
+  scoreText = this.add.text(15, 30, 'score: 0', {
     fontsize: '6',
     fill: '#000000',
   }); //font will default to Courier
@@ -375,7 +427,7 @@ function create() {
     .setScale(0.5);
   instructionsPrompt.visible = false;
 
-  instructions = this.physics.add.staticSprite(330, 150, 'instructions');
+  instructions = this.physics.add.staticSprite(330, 200, 'instructions');
   instructions.visible = false;
   instructions.setScrollFactor(0);
 
@@ -391,13 +443,15 @@ function create() {
     .staticSprite(3070, 200, 'winBubble')
     .setScale(0.5);
   winBubble.visible = false;
-  
+
   // gameOverMessage = this.physics.add.staticSprite(250, 250, 'gameOver')
-  // gameOverMessage.allowGravity = false 
-  
-  pausedMessage = this.physics.add.staticSprite(250, 160, 'paused').setScale(0.5)
-  pausedMessage.allowGravity = false 
-  pausedMessage.visible = false
+  // gameOverMessage.allowGravity = false
+
+  pausedMessage = this.physics.add
+    .staticSprite(250, 160, 'paused')
+    .setScale(0.5);
+  pausedMessage.allowGravity = false;
+  pausedMessage.visible = false;
 
   replayButton = this.add.sprite(3120, 46, 'replayButton').setInteractive();
   replayButton.on('pointerdown', () => {
@@ -407,14 +461,14 @@ function create() {
   });
   replayButton.visible = false;
 
-  pauseButton = this.add.sprite(33, 42, 'pauseButton').setInteractive();
+  pauseButton = this.add.sprite(33, 15, 'pauseButton').setInteractive();
   pauseButton.on('pointerdown', () => {
     pause();
   });
   pauseButton.setScrollFactor(0);
 
   musicButton = this.add
-    .sprite(65, 42, 'musicButton')
+    .sprite(65, 15, 'musicButton')
     .setScale(0.7)
     .setInteractive();
   musicButton.on('pointerdown', () => {
@@ -433,7 +487,7 @@ function create() {
   musicButton.setScrollFactor(0);
 
   musicButtonEmpty = this.add
-    .sprite(65, 42, 'musicButtonEmpty')
+    .sprite(65, 15, 'musicButtonEmpty')
     .setScale(0.7)
     .setInteractive();
   musicButtonEmpty.on('pointerdown', () => {
@@ -451,23 +505,14 @@ function create() {
   });
   musicButtonEmpty.setScrollFactor(0);
 
-  githubButton = this.add.sprite(455, 310, 'github').setInteractive();
-  githubButton.on('pointerdown', () => {
-    window.location.href = 'https://github.com/kirstenlindsmith/stackathon';
-  });
-  githubButton.setScrollFactor(0);
-
-  difficulty = this.add.sprite(236, 258, 'difficulty');
-  difficulty.setScrollFactor(0);
-
-  difficultyTEXT = this.add.text(271, 247, numBombs, {
+  difficultyTEXT = this.add.text(103, 67, numBombs, {
     fontsize: '4px',
-    fill: '#ffffff',
+    fill: '#000000',
   });
   difficultyTEXT.setScrollFactor(0);
 
   difficultyUP = this.add
-    .sprite(306, 255, 'difficultyUP')
+    .sprite(137, 75, 'difficultyUP')
     .setScale(0.4)
     .setInteractive();
   difficultyUP.on('pointerdown', () => {
@@ -476,7 +521,7 @@ function create() {
   difficultyUP.setScrollFactor(0);
 
   difficultyDOWN = this.add
-    .sprite(334, 255, 'difficultyDOWN')
+    .sprite(162, 75, 'difficultyDOWN')
     .setScale(0.4)
     .setInteractive();
   difficultyDOWN.on('pointerdown', () => {
@@ -484,10 +529,59 @@ function create() {
   });
   difficultyDOWN.setScrollFactor(0);
 
-  difficulty.visible = false;
   difficultyTEXT.visible = false;
   difficultyUP.visible = false;
   difficultyDOWN.visible = false;
+  
+  flyingX = this.add.sprite(122, 108, 'flyingX').setScale(0.4).setInteractive()
+  flyingX.on('pointerdown', ()=>{
+    flying = false
+    flyingX.visible = false
+    flyingO.visible = true
+  })
+  flyingX.setScrollFactor(0);
+  
+  flyingO = this.add.sprite(122, 108, 'flyingO').setScale(0.4).setInteractive()
+  flyingO.on('pointerdown', ()=>{
+    flying = true
+    flyingO.visible = false
+    flyingX.visible = true
+  })
+  flyingO.setScrollFactor(0);
+  
+  flyingO.visible = false
+  flyingX.visible = false 
+  
+  settingsMenu = this.add.sprite(70, 100, 'settingsMenu');
+  settingsMenu.setScrollFactor(0);
+  settingsMenu.visible = false;
+  
+  settingsButton = this.add.sprite(90, 15, 'settingsButton').setInteractive()
+  settingsButton.on('pointerdown', () => {
+    if (!settingsOpen){
+      settingsOpen = true
+      settingsMenu.visible = true
+      difficultyTEXT.visible = true;
+      difficultyUP.visible = true;
+      difficultyDOWN.visible = true;
+      flyingO.visible = true
+      flyingX.visible = true
+    } else {
+      settingsOpen = false
+      settingsMenu.visible = false
+      difficultyTEXT.visible = false;
+      difficultyUP.visible = false;
+      difficultyDOWN.visible = false;
+      flyingO.visible = false
+      flyingX.visible = false
+    }
+  })
+  
+  githubButton = this.add.sprite(455, 325, 'github').setInteractive();
+  githubButton.on('pointerdown', () => {
+    window.location.href = 'https://github.com/kirstenlindsmith/stackathon';
+  });
+  githubButton.setScrollFactor(0);
 
   //////////////////////////////////////////////////////////////////////
   // COLLISIONS
@@ -500,7 +594,10 @@ function create() {
   this.physics.add.collider(shield, GroundLayer);
   this.physics.add.collider(buffy, GroundLayer);
   this.physics.add.collider(stars, GroundLayer);
-  if (bombsEnabled) this.physics.add.collider(bombs, GroundLayer);
+  if (bombsEnabled) {
+    this.physics.add.collider(bombs, GroundLayer);
+    this.physics.add.collider(bombs, bombs);
+  }
   this.physics.add.overlap(player, stars, collectStar, null, this);
   // this.physics.add.overlap(bombs, lasers, shoot, null, this);
 
@@ -521,10 +618,10 @@ function create() {
 //////////////////////////////////////////////////////////////////////
 
 function update(time, delta) {
-  if(player.anims.currentFrame){
-    console.log('CURRENT FRAME: ',player.anims.currentFrame.textureFrame)
-    // console.log('TOTAL FRAMES: ', player.anims.getTotalFrames())
-  }
+  // if (player.anims.currentFrame) {
+  //   console.log('CURRENT FRAME: ', player.anims.currentFrame.textureFrame);
+  //   // console.log('TOTAL FRAMES: ', player.anims.getTotalFrames())
+  // }
   player.anims.play('turn');
   this.input.on(
     'pointerdown',
@@ -639,7 +736,7 @@ function update(time, delta) {
     if (cursors.left.isDown) {
       player.setVelocityX(-100);
       player.anims.play('left', true, 3);
-      player.play('left')
+      player.play('left');
     } else if (cursors.right.isDown) {
       player.setVelocityX(100);
       player.anims.play('right', true, 5);
@@ -666,16 +763,16 @@ function update(time, delta) {
 
     if (cursors.shift.isDown) {
       instructions.visible = true;
-      difficulty.visible = true;
-      difficultyTEXT.visible = true;
-      difficultyUP.visible = true;
-      difficultyDOWN.visible = true;
+      // difficulty.visible = true;
+      // difficultyTEXT.visible = true;
+      // difficultyUP.visible = true;
+      // difficultyDOWN.visible = true;
     } else {
       instructions.visible = false;
-      difficulty.visible = false;
-      difficultyTEXT.visible = false;
-      difficultyUP.visible = false;
-      difficultyDOWN.visible = false;
+      // difficulty.visible = false;
+      // difficultyTEXT.visible = false;
+      // difficultyUP.visible = false;
+      // difficultyDOWN.visible = false;
     }
 
     if (shieldCursor.s.isDown) {
@@ -781,7 +878,7 @@ function meow() {
 function pause() {
   if (!gamePaused) {
     gamePaused = true;
-    pausedMessage.visible=true
+    pausedMessage.visible = true;
     music.pause(); //pause music
     player.setVelocity(0, 0); //stop
     controlsWorking = false; //freeze
@@ -796,7 +893,7 @@ function pause() {
     }
   } else {
     gamePaused = false;
-    pausedMessage.visible=false
+    pausedMessage.visible = false;
     music.play();
     if (bombsEnabled) {
       for (let i = 0; i < numBombs; i++) {
