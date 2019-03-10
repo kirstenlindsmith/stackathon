@@ -5,12 +5,8 @@ const config = {
   zoom: 2,
   parent: 'game-container',
   pixelArt: true,
-  // scale: {
-  //   mode: Phaser.Scale.FIT,
-  //   width: 800,
-  //   height: 600,
-  // },
   scene: {
+    key: "scene",
     preload: preload,
     create: create,
     update: update,
@@ -34,15 +30,16 @@ let bomb;
 let bombCollider;
 let shield;
 let shieldUp = false;
-let lasers;
-let laserBolt;
-let Laser;
-let fireDelay = 100;
-let lastFired = 0;
+// let lasers;
+// let laserBolt;
+// let Laser;
+// let fireDelay = 100;
+// let lastFired = 0;
 let cursors;
 let shieldCursor;
 let githubButton;
 let musicButton;
+let pauseButton;
 let score = 0;
 let scoreText;
 let startText;
@@ -61,15 +58,16 @@ let fallSound;
 let winSound;
 let winMeow;
 let startMeow;
-let startCalled = false;
+let meowCalled = false;
 let wonCalled = false;
+let gamePaused = false;
 
 //SETTINGS
 const cheatMode = false;
 let flying = false;
 let musicPaused = false;
 let controlsWorking = false;
-const lasersEnabled = false;
+// const lasersEnabled = false;
 let bombsEnabled = true;
 const numBombs = 9;
 const playerStart = 40; //play: 40, test end: 3000
@@ -89,7 +87,6 @@ if (cheatMode) {
 //////////////////////////////////////////////////////////////////////
 
 function preload() {
-  this.load.setCORS('anonymous'); //required to load script tag from outside source
 
   this.load.image('tiles', 'assets/runner/mainTileset.png');
   this.load.image('decorations', 'assets/runner/erasedTileset.png');
@@ -97,8 +94,8 @@ function preload() {
   this.load.image('star', 'assets/basic/star.png');
   this.load.image('bomb', 'assets/basic/bomb.png');
   this.load.image('shield', 'assets/runner/shield.png');
-  this.load.image('blood', 'assets/runner/particle.png');
-  this.load.image('laser', 'assets/runner/laser.png');
+  // this.load.image('blood', 'assets/runner/particle.png');
+  // this.load.image('laser', 'assets/runner/laser.png');
   this.load.image('speechBubble', 'assets/runner/speechBubble.png');
   this.load.image('instructionsPrompt', 'assets/runner/instructionsPrompt.png');
   this.load.image('instructions', 'assets/runner/instructionsNOLASERS.png');
@@ -106,6 +103,8 @@ function preload() {
   this.load.image('winBubble', 'assets/runner/winBubble.png');
   this.load.image('github', 'assets/runner/github.png');
   this.load.image('musicButton', 'assets/runner/musicButton.png');
+  this.load.image('musicButtonEmpty', 'assets/runner/musicButtonEmpty.png')
+  this.load.image('pauseButton', 'assets/runner/pauseButton.png')
   this.load.tilemapTiledJSON('map', 'assets/runner/MAP2.json');
   // this.load.spritesheet('dude', 'assets/basic/kel.png', {
   //   frameWidth: 32,
@@ -150,7 +149,7 @@ function create() {
     loop: true,
     delay: 0,
   });
-  //music.play();
+  // music.play();
 
   jumpSound = this.sound.add('jump');
   starSound = this.sound.add('collect');
@@ -198,13 +197,13 @@ function create() {
   // PLAYER
   //////////////////////////////////////////////////////////////////////
 
-  player = this.physics.add.sprite(playerStart, 260, 'dude').setScale(1.3); //0.8);
+  player = this.physics.add.sprite(playerStart, 265, 'dude').setScale(1.3); //0.8);
   //this.physics.add defaults to a dynamic body (vs static)
 
   player.setBounce(0.3); //will bounce slightly when landing
   player.body.setGravityY(400); //body property references its arcade physics body
   //if this ^^^ wasn't here it would default to 300, as seen on line 23
-  player.facingLeft = false;
+  // player.facingLeft = false;
 
   shield = this.physics.add.sprite(playerStart, 260, 'shield');
   shield.visible = false;
@@ -289,62 +288,63 @@ function create() {
   //////////////////////////////////////////////////////////////////////
   // LASERS
   //////////////////////////////////////////////////////////////////////
-  ////////////////LASER STUFF (taken from learndot workshop)////////////////
 
-  Laser = class extends Phaser.Physics.Arcade.Sprite {
-    constructor(scene, x, y, spriteKey, facingLeft) {
-      super(scene, x, y, spriteKey);
-      // scene.add.existing(currentScene)
-      // Store reference of scene passed to constructor
-      this.scene = scene;
-      // Add laser to scene and enable physics
-      this.scene.physics.world.enable(this);
-      this.scene.add.existing(this);
+  //WIP: (taken from learndot workshop)
 
-      // Set how fast the laser travels (pixels/ms)
-      this.speed = Phaser.Math.GetSpeed(800, 1); // (distance in pixels, time (ms))
+  // Laser = class extends Phaser.Physics.Arcade.Sprite {
+  //   constructor(scene, x, y, spriteKey, facingLeft) {
+  //     super(scene, x, y, spriteKey);
+  //     // scene.add.existing(currentScene)
+  //     // Store reference of scene passed to constructor
+  //     this.scene = scene;
+  //     // Add laser to scene and enable physics
+  //     this.scene.physics.world.enable(this);
+  //     this.scene.add.existing(this);
 
-      // Important to not apply gravity to the laser bolt!
-      this.body.setAllowGravity(false);
+  //     // Set how fast the laser travels (pixels/ms)
+  //     this.speed = Phaser.Math.GetSpeed(800, 1); // (distance in pixels, time (ms))
 
-      // Our reset function will take care of initializing the remaining fields
-      this.reset(x, y, facingLeft);
-    }
+  //     // Important to not apply gravity to the laser bolt!
+  //     this.body.setAllowGravity(false);
 
-    // Check which direction the player is facing and move the laserbolt in that direction as long as it lives
-    update(time, delta) {
-      this.lifespan -= delta;
-      const moveDistance = this.speed * delta;
-      if (this.facingLeft) {
-        this.x -= moveDistance;
-      } else {
-        this.x += moveDistance;
-      }
-      // If this laser has run out of lifespan, we "kill it" by deactivating it.
-      // We can then reuse this laser object
-      if (this.lifespan <= 0) {
-        this.setActive(false);
-        this.setVisible(false);
-      }
-    }
+  //     // Our reset function will take care of initializing the remaining fields
+  //     this.reset(x, y, facingLeft);
+  //   }
 
-    // Reset this laserbolt to start at a particular location and
-    // fire in a particular direction.
-    reset(x, y, facingLeft) {
-      this.setActive(true);
-      this.setVisible(true);
-      this.lifespan = 900;
-      this.facingLeft = facingLeft;
-      this.setPosition(x, y);
-    }
-  };
+  //   // Check which direction the player is facing and move the laserbolt in that direction as long as it lives
+  //   update(time, delta) {
+  //     this.lifespan -= delta;
+  //     const moveDistance = this.speed * delta;
+  //     if (this.facingLeft) {
+  //       this.x -= moveDistance;
+  //     } else {
+  //       this.x += moveDistance;
+  //     }
+  //     // If this laser has run out of lifespan, we "kill it" by deactivating it.
+  //     // We can then reuse this laser object
+  //     if (this.lifespan <= 0) {
+  //       this.setActive(false);
+  //       this.setVisible(false);
+  //     }
+  //   }
 
-  lasers = this.physics.add.group({
-    classType: Laser,
-    maxSize: 40,
-    runChildUpdate: true,
-    allowGravity: false,
-  });
+  //   // Reset this laserbolt to start at a particular location and
+  //   // fire in a particular direction.
+  //   reset(x, y, facingLeft) {
+  //     this.setActive(true);
+  //     this.setVisible(true);
+  //     this.lifespan = 900;
+  //     this.facingLeft = facingLeft;
+  //     this.setPosition(x, y);
+  //   }
+  // };
+
+  // lasers = this.physics.add.group({
+  //   classType: Laser,
+  //   maxSize: 40,
+  //   runChildUpdate: true,
+  //   allowGravity: false,
+  // });
 
   //////////////////////////////////////////////////////////////////////
   // MESSAGES & BUTTONS
@@ -390,8 +390,22 @@ function create() {
     currentScene.restart();
   });
   replayButton.visible = false;
-
-  musicButton = this.add.sprite(33, 42, 'musicButton').setInteractive();
+  
+  pauseButton = this.add.sprite(33, 42, 'pauseButton').setInteractive();
+  pauseButton.on('pointerdown', () => {
+    if (!gamePaused) {
+      this.scene.pause();
+      music.pause()
+      gamePaused = true;
+    } else if (gamePaused) {
+      this.scene.resume("scene");
+      // music.resume()
+      gamePaused = false;
+    }
+  });
+  pauseButton.setScrollFactor(0);
+  
+  musicButton = this.add.sprite(65, 42, 'musicButton').setScale(0.7).setInteractive();
   musicButton.on('pointerdown', () => {
     if (!musicPaused) {
       music.pause();
@@ -403,10 +417,11 @@ function create() {
   });
   musicButton.setScrollFactor(0);
 
-  // githubButton = this.add.sprite(28, 42, 'github').setScale(0.15).setInteractive();
-  // replayButton.on('pointerdown', () => {
-  //   window.location.href = "https://github.com/kirstenlindsmith/stackathon"
-  // });
+  githubButton = this.add.sprite(455, 310, 'github').setInteractive();
+  githubButton.on('pointerdown', () => {
+    window.location.href = "https://github.com/kirstenlindsmith/stackathon"
+  });
+  githubButton.setScrollFactor(0);
 
   //////////////////////////////////////////////////////////////////////
   // COLLISIONS
@@ -414,14 +429,14 @@ function create() {
 
   map.setCollisionBetween(0, 923, true, 'GroundLayer');
   player.setCollideWorldBounds(true); //player can't leave the game area
-  buffy.setCollideWorldBounds(true);
+  buffy.setCollideWorldBounds(true); //just in case
   this.physics.add.collider(player, GroundLayer);
   this.physics.add.collider(shield, GroundLayer);
   this.physics.add.collider(buffy, GroundLayer);
   this.physics.add.collider(stars, GroundLayer);
   if (bombsEnabled) this.physics.add.collider(bombs, GroundLayer);
   this.physics.add.overlap(player, stars, collectStar, null, this);
-  this.physics.add.overlap(bombs, lasers, shoot, null, this);
+  // this.physics.add.overlap(bombs, lasers, shoot, null, this);
 
   //////////////////////////////////////////////////////////////////////
   // CAMERA
@@ -473,13 +488,16 @@ function update(time, delta) {
   if (player.body.x > 40) {
     start();
   }
+  if(player.body.x > 120) {
+    meow()
+  }
 
   shield.x = player.body.x + 11;
   shield.y = player.body.y + 16;
 
   //DEATH CONDITIONS:
   if (gameOver) {
-    gameOver = false;
+    gameOver = false; //else gameOver will be true on respawn
     controlsWorking = false;
     music.pause();
     player.setVelocity(0, 0);
@@ -493,7 +511,7 @@ function update(time, delta) {
       callback: () =>
         this.add.text(player.x - 40, player.y - 60, 'restarting...', {
           fontsize: '10pt',
-          fill: '#ff0000',
+          fill: '#e256a1',
         }),
       callbackScope: this,
     });
@@ -518,13 +536,12 @@ function update(time, delta) {
       fontsize: '40pt',
       fill: '#ffffff',
     });
-    player.body.velocity.y = 0;
     this.time.addEvent({
       delay: 2000,
       callback: () =>
         this.add.text(player.x - 40, player.y - 60, 'restarting...', {
           fontsize: '10pt',
-          fill: '#ff0000',
+          fill: '#e256a1',
         }),
       callbackScope: this,
     });
@@ -562,7 +579,6 @@ function update(time, delta) {
     if (flying) {
       if (cursors.up.isDown) {
         player.setVelocityY(-330);
-        jumpSound.play();
       }
       if (cursors.down.isDown) {
         player.setVelocityY(250);
@@ -588,20 +604,20 @@ function update(time, delta) {
     }
 
     //shoot
-    if (lasersEnabled) {
-      if (cursors.space.isDown && time > lastFired) {
-        let currentScene = this.scene;
-        fireLaser(currentScene);
-        lastFired = time + fireDelay;
-      }
-    }
+    // if (lasersEnabled) {
+    //   if (cursors.space.isDown && time > lastFired) {
+    //     let currentScene = this.scene;
+    //     fireLaser(currentScene);
+    //     lastFired = time + fireDelay;
+    //   }
+    // }
 
-    buffy.anims.play('curl', true);
-    startText.anims.play('clickToStart', true);
   }
+  buffy.anims.play('curl', true);
+  startText.anims.play('clickToStart', true);
 
   //landing sound:
-  if (player.body.velocity.y > 100) {
+  if (player.body.velocity.y > 100) { //only for big thuds
     player.falling = true;
   }
   if (player.body.onFloor() && player.falling) {
@@ -610,7 +626,7 @@ function update(time, delta) {
   }
 
   //Bomb rebirth settings:
-  //(this way if a bomb falls it will respawn)
+  //(this way if a bomb falls off the map it will respawn)
   if (bombsEnabled) {
     if (bombs.children) {
       bombs.children.iterate(child => {
@@ -645,74 +661,44 @@ function update(time, delta) {
   }
 }
 
-function collectStar(player, star) {
-  star.disableBody(true, true);
-  //^^^disable physics body, set parent game obj inactive and invisible
-  score += 1; //increase score
-  scoreText.setText('score: ' + score); //change display text
-  starSound.play();
-}
-
-function hitBomb(player, bomb) {
-  if (!shieldUp) {
-    this.physics.pause(); //stop the game
-    bombSound.play();
-    player.setTint(0xff0000); //turn the player red
-    player.anims.play('turn'); //make player face forward
-    // bloodyDeath()
-    gameOver = true;
-  }
-}
-
-function fireLaser(scene) {
-  // These are the offsets from the player's position that make it look like
-  // the laser starts from the gun in the player's hand
-  const offsetX = 56;
-  const offsetY = 14;
-  const laserX = player.x + (player.facingLeft ? -offsetX : offsetX);
-  const laserY = player.y + offsetY;
-
-  // Get the first available laser object that has been set to inactive
-  laserBolt = lasers.getFirstDead();
-  // Check if we can reuse an inactive laser in our pool of lasers
-  if (!laserBolt) {
-    // Create a laser bullet and scale the sprite down
-    laserBolt = new Laser(
-      scene,
-      laserX,
-      laserY,
-      'laserBolt',
-      player.facingLeft
-    ).setScale(0.25);
-    lasers.add(laserBolt);
-  }
-  laserBolt.reset(laserX, laserY, this.player.facingLeft);
-}
-
-function shoot(bomb, laser) {
-  laser.setActive(false);
-  laser.setVisible(false);
-  bomb.disableBody(true, true);
-  bomb.enableBody(true, bomb.x + Phaser.Math.Between(-400, 400), 0, true, true);
-  bomb.setVelocityX(Phaser.Math.Between(-200, 200));
-}
+                                     ////////
+                                 ////////////////
+                             ////////////////////////
+                         ////////////////////////////////
+                     ////////////////////////////////////////
+                 ////////////////////////////////////////////////
+             ////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////
+           ////////////////////////////////////////////////////////
+               ////////////////////////////////////////////////
+                   ////////////////////////////////////////
+                       ////////////////////////////////
+                            ////////////////////////
+                                ////////////////
+                                    ////////
 
 function start() {
   speechBubble.visible = false;
   instructionsPrompt.visible = false;
-  if (!startCalled) {
-    startMeow.play();
-    startCalled = true;
-  }
+}
+
+////////////////////////////////////////
+
+function meow(){
+  if (!meowCalled){
+    startMeow.play()
+    meowCalled = true
+  } 
 }
 
 function win(context) {
-  //remove all the bombs:
   if (bombsEnabled) {
     if (bombs.children) {
       bombs.children.iterate(child => {
         if (child) {
-          child.disableBody(true, true);
+          child.disableBody(true, true); //remove all the bombs:
         }
       });
     }
@@ -732,6 +718,68 @@ function win(context) {
     replayButton.visible = true;
   }, 3000);
 }
+
+////////////////////////////////////////
+
+function collectStar(player, star) {
+  star.disableBody(true, true);
+  //^^^disable physics body, set parent game obj inactive and invisible
+  score += 1; //increase score
+  scoreText.setText('score: ' + score); //change display text
+  starSound.play();
+}
+
+////////////////////////////////////////
+
+function hitBomb() {
+  if (!shieldUp) {
+    this.physics.pause(); //stop the game
+    bombSound.play();
+    player.setTint(0xff0000); //turn the player red
+    player.anims.play('turn'); //make player face forward
+    // bloodyDeath()
+    gameOver = true;
+  }
+}
+
+////////////////////////////////////////
+
+// function fireLaser(scene) {
+//   // These are the offsets from the player's position that make it look like
+//   // the laser starts from the gun in the player's hand
+//   const offsetX = 56;
+//   const offsetY = 14;
+//   const laserX = player.x + (player.facingLeft ? -offsetX : offsetX);
+//   const laserY = player.y + offsetY;
+
+//   // Get the first available laser object that has been set to inactive
+//   laserBolt = lasers.getFirstDead();
+//   // Check if we can reuse an inactive laser in our pool of lasers
+//   if (!laserBolt) {
+//     // Create a laser bullet and scale the sprite down
+//     laserBolt = new Laser(
+//       scene,
+//       laserX,
+//       laserY,
+//       'laserBolt',
+//       player.facingLeft
+//     ).setScale(0.25);
+//     lasers.add(laserBolt);
+//   }
+//   laserBolt.reset(laserX, laserY, this.player.facingLeft);
+// }
+
+////////////////////////////////////////
+
+// function shoot(bomb, laser) {
+//   laser.setActive(false);
+//   laser.setVisible(false);
+//   bomb.disableBody(true, true);
+//   bomb.enableBody(true, bomb.x + Phaser.Math.Between(-400, 400), 0, true, true);
+//   bomb.setVelocityX(Phaser.Math.Between(-200, 200));
+// }
+
+////////////////////////////////////////
 
 // function bloodyDeath(){
 //   const blood = this.particles.add('blood')

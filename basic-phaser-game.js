@@ -30,7 +30,7 @@ let gameOver = false
 let gameOverText;
 
 function preload() {
-  this.load.setCORS('anonymous'); //required to load script tag from outside source
+  // this.load.setCORS('anonymous'); //SOMETIMES required to load script tag from outside source
 
   this.load.image('sky', 'assets/basic/sky2.png');
   this.load.image('platform', 'assets/basic/platform2.png');
