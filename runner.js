@@ -93,53 +93,53 @@ if (cheatMode) {
 //////////////////////////////////////////////////////////////////////
 
 function preload() {
-  this.load.image('tiles', 'assets/runner/mainTileset.png');
-  this.load.image('decorations', 'assets/runner/erasedTileset.png');
-  this.load.image('mountainsandclouds', 'assets/runner/mountainsandclouds.png');
+  this.load.image('tiles', 'assets/BadBuffy/mainTileset.png');
+  this.load.image('decorations', 'assets/BadBuffy/erasedTileset.png');
+  this.load.image('mountainsandclouds', 'assets/BadBuffy/mountainsandclouds.png');
   this.load.image('star', 'assets/basic/star.png');
   this.load.image('bomb', 'assets/basic/bomb.png');
-  this.load.image('shield', 'assets/runner/shield.png');
-  // this.load.image('blood', 'assets/runner/particle.png');
-  // this.load.image('laser', 'assets/runner/laser.png');
-  this.load.image('speechBubble', 'assets/runner/speechBubble.png');
-  this.load.image('instructionsPrompt', 'assets/runner/instructionsPrompt.png');
-  this.load.image('instructions', 'assets/runner/instructionsNOLASERS2.png');
-  this.load.image('gameOver', 'assets/runner/gameOver.png')
-  this.load.image('paused', 'assets/runner/pausedMessage.png')
-  this.load.image('replayButton', 'assets/runner/replayButton.png');
-  this.load.image('winBubble', 'assets/runner/winBubble.png');
-  this.load.image('github', 'assets/runner/github.png');
-  this.load.image('musicButton', 'assets/runner/musicButton.png');
-  this.load.image('musicButtonEmpty', 'assets/runner/musicButtonEmpty.png');
-  this.load.image('pauseButton', 'assets/runner/pauseButton.png');
-  this.load.image('difficulty', 'assets/runner/difficulty.png');
-  this.load.image('difficultyUP', 'assets/runner/difficultyUP.png');
-  this.load.image('difficultyDOWN', 'assets/runner/difficultyDOWN.png');
-  this.load.tilemapTiledJSON('map', 'assets/runner/MAP2.json');
+  this.load.image('shield', 'assets/BadBuffy/shield.png');
+  // this.load.image('blood', 'assets/BadBuffy/particle.png');
+  // this.load.image('laser', 'assets/BadBuffy/laser.png');
+  this.load.image('speechBubble', 'assets/BadBuffy/speechBubble.png');
+  this.load.image('instructionsPrompt', 'assets/BadBuffy/instructionsPrompt.png');
+  this.load.image('instructions', 'assets/BadBuffy/instructionsNOLASERS2.png');
+  this.load.image('gameOver', 'assets/BadBuffy/gameOver.png')
+  this.load.image('paused', 'assets/BadBuffy/pausedMessage.png')
+  this.load.image('replayButton', 'assets/BadBuffy/replayButton.png');
+  this.load.image('winBubble', 'assets/BadBuffy/winBubble.png');
+  this.load.image('github', 'assets/BadBuffy/github.png');
+  this.load.image('musicButton', 'assets/BadBuffy/musicButton.png');
+  this.load.image('musicButtonEmpty', 'assets/BadBuffy/musicButtonEmpty.png');
+  this.load.image('pauseButton', 'assets/BadBuffy/pauseButton.png');
+  this.load.image('difficulty', 'assets/BadBuffy/difficulty.png');
+  this.load.image('difficultyUP', 'assets/BadBuffy/difficultyUP.png');
+  this.load.image('difficultyDOWN', 'assets/BadBuffy/difficultyDOWN.png');
+  this.load.tilemapTiledJSON('map', 'assets/BadBuffy/MAP2.json');
   // this.load.spritesheet('dude', 'assets/basic/kel.png', {
   //   frameWidth: 32,
   //   frameHeight: 48,
   // });
-  this.load.spritesheet('dude', 'assets/runner/kel2.png', {
+  this.load.spritesheet('dude', 'assets/BadBuffy/kel2.png', {
     frameWidth: 16,
     frameHeight: 28,
   });
-  this.load.spritesheet('buffy', 'assets/runner/buffy.png', {
+  this.load.spritesheet('buffy', 'assets/BadBuffy/buffy.png', {
     frameWidth: 43,
     frameHeight: 32,
   });
-  this.load.spritesheet('startText', 'assets/runner/clickToStart2.png', {
+  this.load.spritesheet('startText', 'assets/BadBuffy/clickToStart2.png', {
     frameWidth: 351,
     frameHeight: 250,
   });
-  this.load.audio('music', '/assets/runner/harvestMoon.mp3');
-  this.load.audio('jump', 'assets/runner/littleJump.mp3');
-  this.load.audio('collect', 'assets/runner/collect.mp3');
-  this.load.audio('explode', 'assets/runner/explode.mp3');
-  this.load.audio('fall', 'assets/runner/squeak.mp3');
-  this.load.audio('win', 'assets/runner/win.mp3');
-  this.load.audio('winMeow', 'assets/runner/happyMeow.mp3');
-  this.load.audio('startMeow', 'assets/runner/basicMeow.mp3');
+  this.load.audio('music', '/assets/BadBuffy/harvestMoon.mp3');
+  this.load.audio('jump', 'assets/BadBuffy/littleJump.mp3');
+  this.load.audio('collect', 'assets/BadBuffy/collect.mp3');
+  this.load.audio('explode', 'assets/BadBuffy/explode.mp3');
+  this.load.audio('fall', 'assets/BadBuffy/squeak.mp3');
+  this.load.audio('win', 'assets/BadBuffy/win.mp3');
+  this.load.audio('winMeow', 'assets/BadBuffy/happyMeow.mp3');
+  this.load.audio('startMeow', 'assets/BadBuffy/basicMeow.mp3');
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -249,7 +249,6 @@ function create() {
   //////////////////////////////////////////////////////////////////////
   buffy = this.physics.add.sprite(3170, 270, 'buffy');
   this.anims.create({
-    //animations created are available globally, belonging to the game objects themselves!
     key: 'curl',
     frames: this.anims.generateFrameNumbers('buffy', { start: 0, end: 1 }),
     frameRate: 2,
@@ -523,7 +522,8 @@ function create() {
 
 function update(time, delta) {
   if(player.anims.currentFrame){
-    console.log(player.anims.currentFrame.textureFrame)
+    console.log('CURRENT FRAME: ',player.anims.currentFrame.textureFrame)
+    // console.log('TOTAL FRAMES: ', player.anims.getTotalFrames())
   }
   player.anims.play('turn');
   this.input.on(
@@ -638,10 +638,11 @@ function update(time, delta) {
   if (controlsWorking) {
     if (cursors.left.isDown) {
       player.setVelocityX(-100);
-      player.anims.play('left', true);
+      player.anims.play('left', true, 3);
+      player.play('left')
     } else if (cursors.right.isDown) {
       player.setVelocityX(100);
-      player.anims.play('right', true);
+      player.anims.play('right', true, 5);
     } else {
       player.setVelocityX(0);
       player.anims.play('turn');
