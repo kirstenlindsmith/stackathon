@@ -6,7 +6,6 @@ const config = {
   parent: 'game-container',
   pixelArt: true,
   scene: {
-    key: "scene",
     preload: preload,
     create: create,
     update: update,
@@ -40,10 +39,16 @@ let shieldCursor;
 let githubButton;
 let musicButton;
 let pauseButton;
+let difficulty;
+let difficultyLEVEL;
+let difficultyUP;
+let difficultyDOWN;
 let score = 0;
 let scoreText;
 let startText;
 let winBubble;
+let gameOverMessage;
+let pausedMessage;
 let speechBubble;
 let instructions;
 let instructionsPrompt;
@@ -61,6 +66,7 @@ let startMeow;
 let meowCalled = false;
 let wonCalled = false;
 let gamePaused = false;
+let setDifficulty;
 
 //SETTINGS
 const cheatMode = false;
@@ -69,7 +75,7 @@ let musicPaused = false;
 let controlsWorking = false;
 // const lasersEnabled = false;
 let bombsEnabled = true;
-const numBombs = 9;
+let numBombs = 10;
 const playerStart = 40; //play: 40, test end: 3000
 
 if (cheatMode) {
@@ -87,7 +93,6 @@ if (cheatMode) {
 //////////////////////////////////////////////////////////////////////
 
 function preload() {
-
   this.load.image('tiles', 'assets/runner/mainTileset.png');
   this.load.image('decorations', 'assets/runner/erasedTileset.png');
   this.load.image('mountainsandclouds', 'assets/runner/mountainsandclouds.png');
@@ -98,13 +103,18 @@ function preload() {
   // this.load.image('laser', 'assets/runner/laser.png');
   this.load.image('speechBubble', 'assets/runner/speechBubble.png');
   this.load.image('instructionsPrompt', 'assets/runner/instructionsPrompt.png');
-  this.load.image('instructions', 'assets/runner/instructionsNOLASERS.png');
+  this.load.image('instructions', 'assets/runner/instructionsNOLASERS2.png');
+  this.load.image('gameOver', 'assets/runner/gameOver.png')
+  this.load.image('paused', 'assets/runner/pausedMessage.png')
   this.load.image('replayButton', 'assets/runner/replayButton.png');
   this.load.image('winBubble', 'assets/runner/winBubble.png');
   this.load.image('github', 'assets/runner/github.png');
   this.load.image('musicButton', 'assets/runner/musicButton.png');
-  this.load.image('musicButtonEmpty', 'assets/runner/musicButtonEmpty.png')
-  this.load.image('pauseButton', 'assets/runner/pauseButton.png')
+  this.load.image('musicButtonEmpty', 'assets/runner/musicButtonEmpty.png');
+  this.load.image('pauseButton', 'assets/runner/pauseButton.png');
+  this.load.image('difficulty', 'assets/runner/difficulty.png');
+  this.load.image('difficultyUP', 'assets/runner/difficultyUP.png');
+  this.load.image('difficultyDOWN', 'assets/runner/difficultyDOWN.png');
   this.load.tilemapTiledJSON('map', 'assets/runner/MAP2.json');
   // this.load.spritesheet('dude', 'assets/basic/kel.png', {
   //   frameWidth: 32,
@@ -382,6 +392,13 @@ function create() {
     .staticSprite(3070, 200, 'winBubble')
     .setScale(0.5);
   winBubble.visible = false;
+  
+  // gameOverMessage = this.physics.add.staticSprite(250, 250, 'gameOver')
+  // gameOverMessage.allowGravity = false 
+  
+  pausedMessage = this.physics.add.staticSprite(250, 160, 'paused').setScale(0.5)
+  pausedMessage.allowGravity = false 
+  pausedMessage.visible = false
 
   replayButton = this.add.sprite(3120, 46, 'replayButton').setInteractive();
   replayButton.on('pointerdown', () => {
@@ -390,38 +407,88 @@ function create() {
     currentScene.restart();
   });
   replayButton.visible = false;
-  
+
   pauseButton = this.add.sprite(33, 42, 'pauseButton').setInteractive();
   pauseButton.on('pointerdown', () => {
-    if (!gamePaused) {
-      this.scene.pause();
-      music.pause()
-      gamePaused = true;
-    } else if (gamePaused) {
-      this.scene.resume("scene");
-      // music.resume()
-      gamePaused = false;
-    }
+    pause();
   });
   pauseButton.setScrollFactor(0);
-  
-  musicButton = this.add.sprite(65, 42, 'musicButton').setScale(0.7).setInteractive();
+
+  musicButton = this.add
+    .sprite(65, 42, 'musicButton')
+    .setScale(0.7)
+    .setInteractive();
   musicButton.on('pointerdown', () => {
     if (!musicPaused) {
       music.pause();
       musicPaused = true;
+      musicButton.visible = false;
+      musicButtonEmpty.visible = true;
     } else if (musicPaused) {
       music.play();
       musicPaused = false;
+      musicButton.visible = true;
+      musicButtonEmpty.visible = false;
     }
   });
   musicButton.setScrollFactor(0);
 
+  musicButtonEmpty = this.add
+    .sprite(65, 42, 'musicButtonEmpty')
+    .setScale(0.7)
+    .setInteractive();
+  musicButtonEmpty.on('pointerdown', () => {
+    if (!musicPaused) {
+      music.pause();
+      musicPaused = true;
+      musicButtonEmpty.visible = true;
+      musicButton.visible = false;
+    } else if (musicPaused) {
+      music.play();
+      musicPaused = false;
+      musicButtonEmpty.visible = false;
+      musicButton.visible = true;
+    }
+  });
+  musicButtonEmpty.setScrollFactor(0);
+
   githubButton = this.add.sprite(455, 310, 'github').setInteractive();
   githubButton.on('pointerdown', () => {
-    window.location.href = "https://github.com/kirstenlindsmith/stackathon"
+    window.location.href = 'https://github.com/kirstenlindsmith/stackathon';
   });
   githubButton.setScrollFactor(0);
+
+  difficulty = this.add.sprite(236, 258, 'difficulty');
+  difficulty.setScrollFactor(0);
+
+  difficultyTEXT = this.add.text(271, 247, numBombs, {
+    fontsize: '4px',
+    fill: '#ffffff',
+  });
+  difficultyTEXT.setScrollFactor(0);
+
+  difficultyUP = this.add
+    .sprite(306, 255, 'difficultyUP')
+    .setScale(0.4)
+    .setInteractive();
+  difficultyUP.on('pointerdown', () => {
+    increaseDifficulty();
+  });
+  difficultyUP.setScrollFactor(0);
+
+  difficultyDOWN = this.add
+    .sprite(334, 255, 'difficultyDOWN')
+    .setScale(0.4)
+    .setInteractive();
+  difficultyDOWN.on('pointerdown', () => {
+    decreaseDifficulty();
+  });
+  difficultyDOWN.setScrollFactor(0);
+
+  difficulty.visible = false;
+  difficultyTEXT.visible = false;
+  difficultyUP.visible = false;
+  difficultyDOWN.visible = false;
 
   //////////////////////////////////////////////////////////////////////
   // COLLISIONS
@@ -460,7 +527,7 @@ function update(time, delta) {
     'pointerdown',
     event => {
       //on mouse click...
-      music.play();
+      if (!gamePaused) music.play();
       startText.visible = false;
       speechBubble.visible = true;
       controlsWorking = true;
@@ -488,12 +555,14 @@ function update(time, delta) {
   if (player.body.x > 40) {
     start();
   }
-  if(player.body.x > 120) {
-    meow()
+  if (player.body.x > 120) {
+    meow();
   }
 
   shield.x = player.body.x + 11;
   shield.y = player.body.y + 16;
+
+  difficultyTEXT.setText(numBombs);
 
   //DEATH CONDITIONS:
   if (gameOver) {
@@ -593,7 +662,17 @@ function update(time, delta) {
 
     if (cursors.shift.isDown) {
       instructions.visible = true;
-    } else instructions.visible = false;
+      difficulty.visible = true;
+      difficultyTEXT.visible = true;
+      difficultyUP.visible = true;
+      difficultyDOWN.visible = true;
+    } else {
+      instructions.visible = false;
+      difficulty.visible = false;
+      difficultyTEXT.visible = false;
+      difficultyUP.visible = false;
+      difficultyDOWN.visible = false;
+    }
 
     if (shieldCursor.s.isDown) {
       shieldUp = true;
@@ -611,13 +690,13 @@ function update(time, delta) {
     //     lastFired = time + fireDelay;
     //   }
     // }
-
   }
   buffy.anims.play('curl', true);
   startText.anims.play('clickToStart', true);
 
   //landing sound:
-  if (player.body.velocity.y > 100) { //only for big thuds
+  if (player.body.velocity.y > 100) {
+    //only for big thuds
     player.falling = true;
   }
   if (player.body.onFloor() && player.falling) {
@@ -661,23 +740,23 @@ function update(time, delta) {
   }
 }
 
-                                     ////////
-                                 ////////////////
-                             ////////////////////////
-                         ////////////////////////////////
-                     ////////////////////////////////////////
-                 ////////////////////////////////////////////////
-             ////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-        ////////////////////////////////////////////////////////////////
-           ////////////////////////////////////////////////////////
-               ////////////////////////////////////////////////
-                   ////////////////////////////////////////
-                       ////////////////////////////////
-                            ////////////////////////
-                                ////////////////
-                                    ////////
+////////
+////////////////
+////////////////////////
+////////////////////////////////
+////////////////////////////////////////
+////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+////////////////////////////////////////////////
+////////////////////////////////////////
+////////////////////////////////
+////////////////////////
+////////////////
+////////
 
 function start() {
   speechBubble.visible = false;
@@ -686,12 +765,49 @@ function start() {
 
 ////////////////////////////////////////
 
-function meow(){
-  if (!meowCalled){
-    startMeow.play()
-    meowCalled = true
-  } 
+function meow() {
+  if (!meowCalled) {
+    startMeow.play();
+    meowCalled = true;
+  }
 }
+
+////////////////////////////////////////
+
+function pause() {
+  if (!gamePaused) {
+    gamePaused = true;
+    pausedMessage.visible=true
+    music.pause(); //pause music
+    player.setVelocity(0, 0); //stop
+    controlsWorking = false; //freeze
+    if (bombsEnabled) {
+      if (bombs.children) {
+        bombs.children.iterate(child => {
+          if (child) {
+            child.disableBody(true, true); //remove all the bombs:
+          }
+        });
+      }
+    }
+  } else {
+    gamePaused = false;
+    pausedMessage.visible=false
+    music.play();
+    if (bombsEnabled) {
+      for (let i = 0; i < numBombs; i++) {
+        bomb = bombs.create(Phaser.Math.Between(200, 4500), 0, 'bomb');
+        bomb.setBounce(1);
+        bomb.setCollideWorldBounds(true);
+        bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
+        bomb.allowGravity = false;
+      }
+    }
+    controlsWorking = true;
+  }
+}
+
+////////////////////////////////////////
 
 function win(context) {
   if (bombsEnabled) {
@@ -743,6 +859,52 @@ function hitBomb() {
 }
 
 ////////////////////////////////////////
+
+function increaseDifficulty() {
+  if (numBombs < 50) {
+    numBombs++;
+    if (bombsEnabled) {
+      if (bombs.children) {
+        bombs.children.iterate(child => {
+          if (child) {
+            child.disableBody(true, true); //remove all the bombs:
+          }
+        });
+      }
+
+      for (let i = 0; i < numBombs; i++) {
+        bomb = bombs.create(Phaser.Math.Between(200, 4500), 0, 'bomb');
+        bomb.setBounce(1);
+        bomb.setCollideWorldBounds(true);
+        bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
+        bomb.allowGravity = false;
+      }
+    }
+  }
+}
+
+function decreaseDifficulty() {
+  if (numBombs > 0) {
+    numBombs--;
+    if (bombsEnabled) {
+      if (bombs.children) {
+        bombs.children.iterate(child => {
+          if (child) {
+            child.disableBody(true, true); //remove all the bombs:
+          }
+        });
+      }
+
+      for (let i = 0; i < numBombs; i++) {
+        bomb = bombs.create(Phaser.Math.Between(200, 4500), 0, 'bomb');
+        bomb.setBounce(1);
+        bomb.setCollideWorldBounds(true);
+        bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
+        bomb.allowGravity = false;
+      }
+    }
+  }
+}
 
 // function fireLaser(scene) {
 //   // These are the offsets from the player's position that make it look like
