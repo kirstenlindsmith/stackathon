@@ -24,6 +24,7 @@ const game = new Phaser.Game(config);
 let player;
 let buffy;
 let buffyBG;
+let birds;
 let trees;
 let smallerTrees;
 let stars;
@@ -49,6 +50,12 @@ let difficultyLEVEL;
 let difficultyUP;
 let difficultyDOWN;
 let flyingButton;
+let birdsText;
+let birdsUP;
+let birdsDOWN;
+let starsText;
+let starsUP;
+let starsDOWN;
 let score = 0;
 let scoreText;
 let startText;
@@ -79,9 +86,12 @@ const cheatMode = false;
 let flying = false;
 let musicPaused = false;
 let controlsWorking = false;
-// const lasersEnabled = false;
-let bombsEnabled = true
+// let lasersEnabled = false;
+let starsEnabled = false
+let bombsEnabled = false
 let numBombs = 10;
+let numBirds = 50
+let numStars = 60
 const playerStart = 40; //play: 40, test end: 3000
 
 if (cheatMode) {
@@ -154,6 +164,10 @@ function preload() {
   this.load.spritesheet('startText', 'assets/BadBuffy/clickToStart2.png', {
     frameWidth: 351,
     frameHeight: 250,
+  });
+  this.load.spritesheet('bird', 'assets/BadBuffy/bird.png', {
+    frameWidth: 26,
+    frameHeight: 25,
   });
   this.load.audio('music', '/assets/BadBuffy/harvestMoon.mp3');
   this.load.audio('jump', 'assets/BadBuffy/littleJump.mp3');
@@ -252,6 +266,30 @@ function create() {
   trees.create(550, 258, 'tree').setScale(1.5)
   trees.create(249, 258, 'tree').setScale(1.5)
   smallerTrees.create(414, 213, 'smallerTree').setScale(1.5)
+  
+  //////////////////////////////////////////////////////////////////////
+  // BIRDS
+  //////////////////////////////////////////////////////////////////////
+
+  birds = this.physics.add.group()
+  
+  for (let i=0; i<numBirds; i++){
+    let bird = birds.create(Phaser.Math.Between(0, 3000), Phaser.Math.Between(20, 75), 'bird').setScale(0.5)
+    bird.body.allowGravity = false
+    bird.setVelocityX(Phaser.Math.Between(50, 60))
+    bird.setDepth(0)
+    bird.anims.msPerFrame = Phaser.Math.Between(7,9)
+  }
+
+
+  this.anims.create({
+    //animations created are available globally, belonging to the game objects themselves!
+    key: 'fly',
+    frames: this.anims.generateFrameNumbers('bird', { start: 0, end: 3 }),
+    frameRate: 7,
+    repeat: -1,
+    //use frames 0,1,2,3 at 10 fps, and -1 repeat tells it to loop
+  });
 
   //////////////////////////////////////////////////////////////////////
   // PLAYER
@@ -317,19 +355,31 @@ function create() {
   //////////////////////////////////////////////////////////////////////
   // STARS
   //////////////////////////////////////////////////////////////////////
-
-  stars = this.physics.add.group({
+    stars = this.physics.add.group({
     //add.group can take an obj for settings!
     key: 'star', //texture key is the star image
-    repeat: 59, //repeating x times means x+1stars total, (x + default 1)
+    repeat: numStars -1, //repeating x times means x+1stars total, (x + default 1)
     setXY: { x: 12, y: 0, stepX: 49 },
     //first child will be born at 12, increasing across the x at intervals of 70px
   });
+  
+  if (!starsEnabled){
+    stars.children.iterate(child=>{
+      child.visible=false
+      child.body.allowGravity=false
+    })
+  } else {
+    stars.children.iterate(child=>{
+      child.body.allowGravity=true
+      child.visible=true
+    })
+  }
 
   stars.children.iterate(child => {
     child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
     child.setScale(0.5);
   }); //vary the bounciness of the stars until they finally settle
+
 
   //////////////////////////////////////////////////////////////////////
   // BOMBS
@@ -505,14 +555,14 @@ function create() {
   });
   musicButtonEmpty.setScrollFactor(0);
 
-  difficultyTEXT = this.add.text(103, 67, numBombs, {
+  difficultyTEXT = this.add.text(125, 57, numBombs, {
     fontsize: '4px',
-    fill: '#000000',
+    fill: '#ffffff',
   });
   difficultyTEXT.setScrollFactor(0);
 
   difficultyUP = this.add
-    .sprite(137, 75, 'difficultyUP')
+    .sprite(160, 65, 'difficultyUP')
     .setScale(0.4)
     .setInteractive();
   difficultyUP.on('pointerdown', () => {
@@ -521,7 +571,7 @@ function create() {
   difficultyUP.setScrollFactor(0);
 
   difficultyDOWN = this.add
-    .sprite(162, 75, 'difficultyDOWN')
+    .sprite(185, 65, 'difficultyDOWN')
     .setScale(0.4)
     .setInteractive();
   difficultyDOWN.on('pointerdown', () => {
@@ -533,7 +583,7 @@ function create() {
   difficultyUP.visible = false;
   difficultyDOWN.visible = false;
   
-  flyingX = this.add.sprite(122, 108, 'flyingX').setScale(0.4).setInteractive()
+  flyingX = this.add.sprite(137, 90, 'flyingX').setScale(0.4).setInteractive()
   flyingX.on('pointerdown', ()=>{
     flying = false
     flyingX.visible = false
@@ -541,7 +591,7 @@ function create() {
   })
   flyingX.setScrollFactor(0);
   
-  flyingO = this.add.sprite(122, 108, 'flyingO').setScale(0.4).setInteractive()
+  flyingO = this.add.sprite(137, 90, 'flyingO').setScale(0.4).setInteractive()
   flyingO.on('pointerdown', ()=>{
     flying = true
     flyingO.visible = false
@@ -551,6 +601,21 @@ function create() {
   
   flyingO.visible = false
   flyingX.visible = false 
+  
+  birdsText =  this.add.text(75, 106, numBirds, {
+    fontsize: '4px',
+    fill: '#ffffff',
+  });
+  birdsText.setScrollFactor(0);
+  birdsText.visible=false
+  
+  starsText =  this.add.text(75, 129, numStars, {
+    fontsize: '4px',
+    fill: '#ffffff',
+  });
+  starsText.setScrollFactor(0);
+  starsText.visible = false
+  
   
   settingsMenu = this.add.sprite(70, 100, 'settingsMenu');
   settingsMenu.setScrollFactor(0);
@@ -566,6 +631,8 @@ function create() {
       difficultyDOWN.visible = true;
       flyingO.visible = true
       flyingX.visible = true
+      birdsText.visible= true
+      starsText.visible = true
     } else {
       settingsOpen = false
       settingsMenu.visible = false
@@ -574,6 +641,8 @@ function create() {
       difficultyDOWN.visible = false;
       flyingO.visible = false
       flyingX.visible = false
+      birdsText.visible=false
+      starsText.visible = false
     }
   })
   
@@ -631,6 +700,12 @@ function update(time, delta) {
       startText.visible = false;
       speechBubble.visible = true;
       controlsWorking = true;
+      starsEnabled = true
+      stars.children.iterate(child=>{
+        child.body.allowGravity=true
+        child.visible=true
+      })
+      bombsEnabled = true
       bombCollider = this.physics.add.collider(
         player,
         bombs,
@@ -735,11 +810,11 @@ function update(time, delta) {
   if (controlsWorking) {
     if (cursors.left.isDown) {
       player.setVelocityX(-100);
-      player.anims.play('left', true, 3);
+      player.anims.play('left', true);
       player.play('left');
     } else if (cursors.right.isDown) {
       player.setVelocityX(100);
-      player.anims.play('right', true, 5);
+      player.anims.play('right', true);
     } else {
       player.setVelocityX(0);
       player.anims.play('turn');
@@ -763,16 +838,8 @@ function update(time, delta) {
 
     if (cursors.shift.isDown) {
       instructions.visible = true;
-      // difficulty.visible = true;
-      // difficultyTEXT.visible = true;
-      // difficultyUP.visible = true;
-      // difficultyDOWN.visible = true;
     } else {
       instructions.visible = false;
-      // difficulty.visible = false;
-      // difficultyTEXT.visible = false;
-      // difficultyUP.visible = false;
-      // difficultyDOWN.visible = false;
     }
 
     if (shieldCursor.s.isDown) {
@@ -794,7 +861,12 @@ function update(time, delta) {
   }
   buffy.anims.play('curl', true);
   startText.anims.play('clickToStart', true);
-
+  
+  if (birds.children){
+    birds.children.iterate(child=>{
+      child.anims.play('fly', true)
+    })
+  }
   //landing sound:
   if (player.body.velocity.y > 100) {
     //only for big thuds
@@ -828,17 +900,35 @@ function update(time, delta) {
     }
   }
 
-  if (stars.children) {
-    stars.children.iterate(child => {
+  //Star rebirth settings: (for if they fall)
+  if (starsEnabled){
+    if (stars.children) {
+      stars.children.iterate(child => {
+        if (child) {
+          const starHeight = child.y;
+          if (starHeight > 400) {
+            child.disableBody(true, true);
+            child.enableBody(true, child.x + 130, 0, true, true);
+          }
+        }
+      });
+    }
+  }
+  
+  //Bird rebirth settings: (for if they fly off the map)
+  if (birds.children){
+    birds.children.iterate(child=> {
       if (child) {
-        const starHeight = child.y;
-        if (starHeight > 400) {
-          child.disableBody(true, true);
-          child.enableBody(true, child.x + 130, 0, true, true);
+        const birdDistance = child.x
+        if (birdDistance > 3200){
+          child.disableBody(true, true)
+          child.enableBody(true, 0, Phaser.Math.Between(20,75), true, true)
+          child.body.allowGravity = false
+          child.setVelocityX(Phaser.Math.Between(50,60))
         }
       }
-    });
-  }
+    })
+  }//50/60,
 }
 
 ////////
@@ -891,6 +981,13 @@ function pause() {
         });
       }
     }
+      if (birds.children) {
+        birds.children.iterate(child => {
+          if (child) {
+            child.disableBody(true, true); //and birds:
+          }
+        });
+      }
   } else {
     gamePaused = false;
     pausedMessage.visible = false;
@@ -903,6 +1000,11 @@ function pause() {
         bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
         bomb.allowGravity = false;
       }
+    }
+    for (let i=0; i<numBirds; i++){
+      let bird = birds.create(Phaser.Math.Between(20, 3000), Phaser.Math.Between(20, 75), 'bird').setScale(0.5)
+      bird.body.allowGravity = false
+      bird.setVelocityX(100)
     }
     controlsWorking = true;
   }
