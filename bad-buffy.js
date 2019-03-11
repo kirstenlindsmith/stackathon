@@ -86,6 +86,8 @@ let setDifficulty;
 //SETTINGS
 const cheatMode = false;
 let flying = false;
+let immortal = true;
+let immortalMode = false
 let musicPaused = false;
 let controlsWorking = false;
 // let lasersEnabled = false;
@@ -773,8 +775,8 @@ function update(time, delta) {
     'pointerdown',
     event => {
       //on mouse click...
-      // if (!gameStarted){
-        gameStarted = true
+      if (immortal){
+        if (immortal && !immortalMode) immortal = false
         if (!music.isPlaying) music.play();
         startText.visible = false;
         speechBubble.visible = true;
@@ -794,6 +796,8 @@ function update(time, delta) {
         ).name = 'bombCollider';
         this.physics.add.collider(bombs, GroundLayer);
         this.physics.add.collider(bombs, bombs);
+        increaseDifficulty()
+        decreaseDifficulty()
         this.time.addEvent({
           delay: 2000,
           callback: () => (instructionsPrompt.visible = true),
@@ -804,7 +808,7 @@ function update(time, delta) {
           callback: () => (instructionsPrompt.visible = false),
           callbackScope: this,
         });
-    //  }
+     }
     },
     this
   );
@@ -1160,7 +1164,7 @@ function collectStar(player, star) {
 ////////////////////////////////////////
 
 function hitBomb() {
-  if (!shieldUp && bombsEnabled) {
+  if (!shieldUp && !immortal) {
     this.physics.pause(); //stop the game
     bombSound.play();
     player.setTint(0xff0000); //turn the player red
