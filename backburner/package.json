@@ -4,7 +4,8 @@
   "description": "a little game",
   "main": "index.js",
   "scripts": {
-    "start": "python -m SimpleHTTPServer"
+    "start": "node index.js",
+    "server": "python -m SimpleHTTPServer"
   },
   "repository": {
     "type": "git",
