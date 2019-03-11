@@ -90,7 +90,7 @@ let controlsWorking = false;
 let starsEnabled = false;
 let bombsEnabled = false;
 let numBombs = 10;
-let numBirds = 50;
+let numBirds = 25;
 let numStars = 60;
 let starInterval = 49
 const playerStart = 40; //play: 40, test end: 3000
@@ -871,11 +871,11 @@ function update(time, delta) {
   if (controlsWorking) {
     if (cursors.left.isDown) {
       player.setVelocityX(-100);
-      player.anims.play('left', true);
+      player.anims.play('left');
       player.play('left');
     } else if (cursors.right.isDown) {
       player.setVelocityX(100);
-      player.anims.play('right', true);
+      player.anims.play('right');
     } else {
       player.setVelocityX(0);
       player.anims.play('turn');
