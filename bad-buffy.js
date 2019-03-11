@@ -409,13 +409,6 @@ function create() {
       bomb.allowGravity = false;
     }
   } else {
-    bombCollider = this.physics.add.collider(
-      player,
-      bombs,
-      null,
-      null,
-      this
-    ).name = 'bombCollider';
     this.physics.add.collider(bombs, GroundLayer);
     this.physics.add.collider(bombs, bombs);
   }
@@ -775,7 +768,7 @@ function update(time, delta) {
     'pointerdown',
     event => {
       //on mouse click...
-      if (immortal){
+      // if (immortal){
         if (immortal && !immortalMode) immortal = false
         if (!music.isPlaying) music.play();
         startText.visible = false;
@@ -808,7 +801,6 @@ function update(time, delta) {
           callback: () => (instructionsPrompt.visible = false),
           callbackScope: this,
         });
-     }
     },
     this
   );
