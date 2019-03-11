@@ -24,6 +24,7 @@ const game = new Phaser.Game(config);
 let player;
 let buffy;
 let buffyBG;
+let GroundLayer
 let birds;
 let trees;
 let smallerTrees;
@@ -80,6 +81,7 @@ let meowCalled = false;
 let wonCalled = false;
 let gamePaused = false;
 let setDifficulty;
+// let gameStarted = false
 
 //SETTINGS
 const cheatMode = false;
@@ -92,7 +94,7 @@ let bombsEnabled = false;
 let numBombs = 10;
 let numBirds = 25;
 let numStars = 60;
-let starInterval = 49
+let starInterval = 49;
 const playerStart = 40; //play: 40, test end: 3000
 
 if (cheatMode) {
@@ -145,12 +147,12 @@ function preload() {
   this.load.image('flyingX', 'assets/BadBuffy/flyingX.png');
   this.load.image('difficultyUP', 'assets/BadBuffy/difficultyUP.png');
   this.load.image('difficultyDOWN', 'assets/BadBuffy/difficultyDOWN.png');
-  this.load.image('birdsUP', 'assets/BadBuffy/birdsUP.png')
-  this.load.image('birdsDOWN', 'assets/BadBuffy/birdsDOWN.png')
-  this.load.image('starsUP', 'assets/BadBuffy/starsUP.png')
-  this.load.image('starsDOWN', 'assets/BadBuffy/starsDOWN.png')
+  this.load.image('birdsUP', 'assets/BadBuffy/birdsUP.png');
+  this.load.image('birdsDOWN', 'assets/BadBuffy/birdsDOWN.png');
+  this.load.image('starsUP', 'assets/BadBuffy/starsUP.png');
+  this.load.image('starsDOWN', 'assets/BadBuffy/starsDOWN.png');
 
-  // this.load.spritesheet('dude', 'assets/basic/kel.png', {
+  // this.load.spritesheet('dude', 'assets/basic/kel.png', { //old sprite
   //   frameWidth: 32,
   //   frameHeight: 48,
   // });
@@ -158,10 +160,6 @@ function preload() {
     frameWidth: 16,
     frameHeight: 28,
   });
-  // this.load.spritesheet('buffy', 'assets/BadBuffy/buffy.png', {
-  //   frameWidth: 43,
-  //   frameHeight: 32,
-  // });
   this.load.spritesheet('buffy', 'assets/BadBuffy/meow.png', {
     frameWidth: 19,
     frameHeight: 21,
@@ -194,6 +192,7 @@ function preload() {
 
 function create() {
   controlsWorking = false;
+  bombsEnabled = false;
   //////////////////////////////////////////////////////////////////////
   // AUDIO
   //////////////////////////////////////////////////////////////////////
@@ -201,7 +200,6 @@ function create() {
     loop: true,
     delay: 0,
   });
-  // music.play();
 
   jumpSound = this.sound.add('jump');
   starSound = this.sound.add('collect');
@@ -243,7 +241,7 @@ function create() {
     0,
     0
   );
-  const GroundLayer = map.createStaticLayer('GroundLayer', tileset, 0, 0);
+  GroundLayer = map.createStaticLayer('GroundLayer', tileset, 0, 0);
 
   //////////////////////////////////////////////////////////////////////
   // EXTRA TREES
@@ -343,7 +341,7 @@ function create() {
   //////////////////////////////////////////////////////////////////////
   buffyBG = this.physics.add.staticSprite(3166, 270, 'buffyBG').setScale(1.5);
 
-  buffy = this.physics.add.sprite(3170, 274, 'buffy');
+  buffy = this.physics.add.sprite(3166, 274, 'buffy');
   this.anims.create({
     key: 'curl',
     frames: this.anims.generateFrameNumbers('buffy', { start: 0, end: 1 }),
@@ -392,13 +390,32 @@ function create() {
 
   bombs = this.physics.add.group();
   if (bombsEnabled) {
+    bombCollider = this.physics.add.collider(
+      player,
+      bombs,
+      hitBomb,
+      null,
+      this
+    ).name = 'bombCollider';
+    this.physics.add.collider(bombs, GroundLayer);
+    this.physics.add.collider(bombs, bombs);
     for (let i = 0; i < numBombs; i++) {
-      bomb = bombs.create(Phaser.Math.Between(200, 4500), 0, 'bomb');
+      bomb = bombs.create(Phaser.Math.Between(0, 3000), 0, 'bomb');
       bomb.setBounce(1);
       bomb.setCollideWorldBounds(true);
       bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
       bomb.allowGravity = false;
     }
+  } else {
+    bombCollider = this.physics.add.collider(
+      player,
+      bombs,
+      null,
+      null,
+      this
+    ).name = 'bombCollider';
+    this.physics.add.collider(bombs, GroundLayer);
+    this.physics.add.collider(bombs, bombs);
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -495,7 +512,7 @@ function create() {
   });
 
   winBubble = this.physics.add
-    .staticSprite(3070, 200, 'winBubble')
+    .staticSprite(3078, 205, 'winBubble')
     .setScale(0.5);
   winBubble.visible = false;
 
@@ -619,26 +636,26 @@ function create() {
   });
   birdsText.setScrollFactor(0);
   birdsText.visible = false;
-  
+
   birdsUP = this.add
     .sprite(110, 115, 'birdsUP')
     .setScale(0.4)
     .setInteractive();
-    birdsUP.on('pointerdown', () => {
+  birdsUP.on('pointerdown', () => {
     increaseBirds();
   });
   birdsUP.setScrollFactor(0);
-  birdsUP.visible = false
-  
+  birdsUP.visible = false;
+
   birdsDOWN = this.add
     .sprite(135, 115, 'birdsDOWN')
     .setScale(0.4)
     .setInteractive();
-    birdsDOWN.on('pointerdown', () => {
+  birdsDOWN.on('pointerdown', () => {
     decreaseBirds();
   });
   birdsDOWN.setScrollFactor(0);
-  birdsDOWN.visible = false
+  birdsDOWN.visible = false;
 
   starsText = this.add.text(75, 129, numStars, {
     fontsize: '4px',
@@ -646,26 +663,26 @@ function create() {
   });
   starsText.setScrollFactor(0);
   starsText.visible = false;
-  
+
   starsUP = this.add
     .sprite(110, 137, 'starsUP')
     .setScale(0.4)
     .setInteractive();
-    starsUP.on('pointerdown', () => {
+  starsUP.on('pointerdown', () => {
     increaseStars();
   });
   starsUP.setScrollFactor(0);
-  starsUP.visible = false
-  
+  starsUP.visible = false;
+
   starsDOWN = this.add
     .sprite(135, 137, 'starsDOWN')
     .setScale(0.4)
     .setInteractive();
-    starsDOWN.on('pointerdown', () => {
+  starsDOWN.on('pointerdown', () => {
     decreaseStars();
   });
   starsDOWN.setScrollFactor(0);
-  starsDOWN.visible = false
+  starsDOWN.visible = false;
 
   settingsMenu = this.add.sprite(70, 100, 'settingsMenu');
   settingsMenu.setScrollFactor(0);
@@ -704,8 +721,9 @@ function create() {
       starsDOWN.visible = false;
     }
   });
+  settingsButton.setScrollFactor(0)
 
-  githubButton = this.add.sprite(455, 325, 'github').setInteractive();
+  githubButton = this.add.sprite(450, 324, 'github').setInteractive();
   githubButton.on('pointerdown', () => {
     window.location.href = 'https://github.com/kirstenlindsmith/stackathon';
   });
@@ -755,33 +773,38 @@ function update(time, delta) {
     'pointerdown',
     event => {
       //on mouse click...
-      if (!music.isPlaying) music.play();
-      startText.visible = false;
-      speechBubble.visible = true;
-      controlsWorking = true;
-      starsEnabled = true;
-      stars.children.iterate(child => {
-        child.body.allowGravity = true;
-        child.visible = true;
-      });
-      bombsEnabled = true;
-      bombCollider = this.physics.add.collider(
-        player,
-        bombs,
-        hitBomb,
-        null,
-        this
-      ).name = 'bombCollider';
-      this.time.addEvent({
-        delay: 2000,
-        callback: () => (instructionsPrompt.visible = true),
-        callbackScope: this,
-      });
-      this.time.addEvent({
-        delay: 6000,
-        callback: () => (instructionsPrompt.visible = false),
-        callbackScope: this,
-      });
+      // if (!gameStarted){
+        gameStarted = true
+        if (!music.isPlaying) music.play();
+        startText.visible = false;
+        speechBubble.visible = true;
+        controlsWorking = true;
+        starsEnabled = true;
+        stars.children.iterate(child => {
+          child.body.allowGravity = true;
+          child.visible = true;
+        });
+        bombsEnabled = true;
+        bombCollider = this.physics.add.collider(
+          player,
+          bombs,
+          hitBomb,
+          null,
+          this
+        ).name = 'bombCollider';
+        this.physics.add.collider(bombs, GroundLayer);
+        this.physics.add.collider(bombs, bombs);
+        this.time.addEvent({
+          delay: 2000,
+          callback: () => (instructionsPrompt.visible = true),
+          callbackScope: this,
+        });
+        this.time.addEvent({
+          delay: 6000,
+          callback: () => (instructionsPrompt.visible = false),
+          callbackScope: this,
+        });
+    //  }
     },
     this
   );
@@ -799,6 +822,16 @@ function update(time, delta) {
   difficultyTEXT.setText(numBombs);
   birdsText.setText(numBirds);
   starsText.setText(numStars);
+  
+  // if (!bombs.children.length){
+  //   for (let i = 0; i < numBombs; i++) {
+  //     bomb = bombs.create(Phaser.Math.Between(0, 3000), 0, 'bomb');
+  //     bomb.setBounce(1);
+  //     bomb.setCollideWorldBounds(true);
+  //     bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
+  //     bomb.allowGravity = false;
+  //   }
+  // }
 
   //DEATH CONDITIONS:
   if (gameOver) {
@@ -1054,8 +1087,17 @@ function pause() {
     pausedMessage.visible = false;
     music.play();
     if (bombsEnabled) {
+      bombCollider = this.physics.add.collider(
+        player,
+        bombs,
+        hitBomb,
+        null,
+        this
+      ).name = 'bombCollider';
+      this.physics.add.collider(bombs, GroundLayer);
+      this.physics.add.collider(bombs, bombs);
       for (let i = 0; i < numBombs; i++) {
-        bomb = bombs.create(Phaser.Math.Between(200, 4500), 0, 'bomb');
+        bomb = bombs.create(Phaser.Math.Between(0, 3000), 0, 'bomb');
         bomb.setBounce(1);
         bomb.setCollideWorldBounds(true);
         bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
@@ -1118,7 +1160,7 @@ function collectStar(player, star) {
 ////////////////////////////////////////
 
 function hitBomb() {
-  if (!shieldUp) {
+  if (!shieldUp && bombsEnabled) {
     this.physics.pause(); //stop the game
     bombSound.play();
     player.setTint(0xff0000); //turn the player red
@@ -1142,8 +1184,9 @@ function increaseDifficulty() {
         });
       }
 
-      for (let i = 0; i < numBombs; i++) { // recreate them at approprite amount
-        bomb = bombs.create(Phaser.Math.Between(200, 4500), 0, 'bomb');
+      for (let i = 0; i < numBombs; i++) {
+        // recreate them at approprite amount
+        bomb = bombs.create(Phaser.Math.Between(0, 3000), 0, 'bomb');
         bomb.setBounce(1);
         bomb.setCollideWorldBounds(true);
         bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
@@ -1167,8 +1210,9 @@ function decreaseDifficulty() {
         });
       }
 
-      for (let i = 0; i < numBombs; i++) { //recreate them at appropriate amount
-        bomb = bombs.create(Phaser.Math.Between(200, 4500), 0, 'bomb');
+      for (let i = 0; i < numBombs; i++) {
+        //recreate them at appropriate amount
+        bomb = bombs.create(Phaser.Math.Between(0, 3000), 0, 'bomb');
         bomb.setBounce(1);
         bomb.setCollideWorldBounds(true);
         bomb.setVelocity(Phaser.Math.Between(-100, 100), 20);
@@ -1181,52 +1225,62 @@ function decreaseDifficulty() {
 ////////////////////////////////////////
 
 function increaseBirds() {
-  starsEnabled = true
+  starsEnabled = true;
   if (numBirds < 99) {
     numBirds++;
-      if (birds.children) {
-        birds.children.iterate(child => {
-          if (child) {
-            child.disableBody(true, true); //remove all the birds:
-          }
-        });
-      }
+    if (birds.children) {
+      birds.children.iterate(child => {
+        if (child) {
+          child.disableBody(true, true); //remove all the birds:
+        }
+      });
+    }
 
-      for (let i = 0; i < numBirds; i++) { //recreate them at appropriate amount
-        let bird = birds
-          .create(Phaser.Math.Between(0, 3000), Phaser.Math.Between(20, 75), 'bird')
-          .setScale(0.5);
-        bird.body.allowGravity = false;
-        bird.setVelocityX(Phaser.Math.Between(50, 60));
-        bird.setDepth(0);
-        bird.anims.msPerFrame = Phaser.Math.Between(7, 9);
-      }
+    for (let i = 0; i < numBirds; i++) {
+      //recreate them at appropriate amount
+      let bird = birds
+        .create(
+          Phaser.Math.Between(0, 3000),
+          Phaser.Math.Between(20, 75),
+          'bird'
+        )
+        .setScale(0.5);
+      bird.body.allowGravity = false;
+      bird.setVelocityX(Phaser.Math.Between(50, 60));
+      bird.setDepth(0);
+      bird.anims.msPerFrame = Phaser.Math.Between(7, 9);
+    }
   }
 }
 
 ////////////////////////////////////////
 
 function decreaseBirds() {
-  starsEnabled = true
+  starsEnabled = true;
   if (numBirds > 0) {
     numBirds--;
-      if (birds.children) {
-        birds.children.iterate(child => {
-          if (child) {
-            child.disableBody(true, true); //remove all the birds:
-          }
-        });
-      }
+    if (birds.children) {
+      birds.children.iterate(child => {
+        if (child) {
+          child.disableBody(true, true); //remove all the birds:
+        }
+      });
+    }
 
-      for (let i = 0; i < numBirds; i++) { //recreate them at appropriate amount
-        let bird = birds
-          .create(Phaser.Math.Between(0, 3000), Phaser.Math.Between(20, 75), 'bird')
-          .setScale(0.5);
-        bird.body.allowGravity = false;
-        bird.setVelocityX(Phaser.Math.Between(50, 60));
-        bird.setDepth(0);
-        bird.anims.msPerFrame = Phaser.Math.Between(7, 9);
-      }
+    for (let i = 0; i < numBirds; i++) {
+      //recreate them at appropriate amount
+      let bird = birds
+        .create(
+          Phaser.Math.Between(0, 3000),
+          Phaser.Math.Between(20, 75),
+          'bird'
+        )
+        .setScale(0.5);
+      bird.body.allowGravity = false;
+      bird.setVelocityX(Phaser.Math.Between(50, 60));
+      bird.setDepth(0);
+      bird.anims.msPerFrame = Phaser.Math.Between(7, 9);
+    }
   }
 }
 
@@ -1235,21 +1289,21 @@ function decreaseBirds() {
 function increaseStars() {
   if (numStars < 99) {
     numStars++;
-      starInterval--
-      if (stars.children) {
-        stars.children.iterate(child => {
-          if (child) {
-            child.disableBody(true, true); //remove all the stars:
-          }
-        });
-      }
-     
-      for (let i = 0; i <= numStars; i++) {
-        let star = stars.create(0+(i*starInterval), 0, 'star'); //recreate them at appropriate amount
-        star.setScale(0.5);
-        star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-      }
+    starInterval--;
+    if (stars.children) {
+      stars.children.iterate(child => {
+        if (child) {
+          child.disableBody(true, true); //remove all the stars:
+        }
+      });
     }
+
+    for (let i = 0; i <= numStars; i++) {
+      let star = stars.create(0 + i * starInterval, 0, 'star'); //recreate them at appropriate amount
+      star.setScale(0.5);
+      star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+    }
+  }
 }
 
 ////////////////////////////////////////
@@ -1257,19 +1311,20 @@ function increaseStars() {
 function decreaseStars() {
   if (numStars > 0) {
     numStars--;
-      if (stars.children) {
-        stars.children.iterate(child => {
-          if (child) {
-            child.disableBody(true, true); //remove all the stars:
-          }
-        });
-      }
-      for (let i = 0; i <= numStars; i++) { //recreate them at appropriate amount
-        let star = stars.create(0+(i*starInterval), 0, 'star');
-        star.setScale(0.5);
-        star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
-      }
+    if (stars.children) {
+      stars.children.iterate(child => {
+        if (child) {
+          child.disableBody(true, true); //remove all the stars:
+        }
+      });
     }
+    for (let i = 0; i <= numStars; i++) {
+      //recreate them at appropriate amount
+      let star = stars.create(0 + i * starInterval, 0, 'star');
+      star.setScale(0.5);
+      star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+    }
+  }
 }
 
 ////////////////////////////////////////
