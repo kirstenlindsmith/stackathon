@@ -18,7 +18,7 @@ const config = {
   },
 };
 
-//GLOBAL GAME OBJECT VARIABLES:
+//GLOBAL GAME VARIABLES:
 const game = new Phaser.Game(config);
 
 let player;
