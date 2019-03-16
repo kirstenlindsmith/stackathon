@@ -94,7 +94,7 @@ let controlsWorking = false;
 let starsEnabled = false;
 let bombsEnabled = false;
 let numBombs = 10;
-let numBirds = 25;
+let numBirds = 20;
 let numStars = 60;
 let starInterval = 49;
 const playerStart = 40; //play: 40, test end: 3000
@@ -530,7 +530,7 @@ function create() {
 
   pauseButton = this.add.sprite(33, 15, 'pauseButton').setInteractive();
   pauseButton.on('pointerdown', () => {
-    pause();
+    pause(this);
   });
   pauseButton.setScrollFactor(0);
 
@@ -901,7 +901,7 @@ function update(time, delta) {
     if (cursors.left.isDown) {
       player.setVelocityX(-100);
       player.anims.play('left');
-      player.play('left');
+      // player.play('left');
     } else if (cursors.right.isDown) {
       player.setVelocityX(100);
       player.anims.play('right');
@@ -1055,7 +1055,7 @@ function meow() {
 
 ////////////////////////////////////////
 
-function pause() {
+function pause(context) {
   if (!gamePaused) {
     gamePaused = true;
     pausedMessage.visible = true;
@@ -1063,6 +1063,13 @@ function pause() {
     player.setVelocity(0, 0); //stop
     controlsWorking = false; //freeze
     if (bombsEnabled) {
+      bombCollider = context.physics.add.collider(
+        player,
+        bombs,
+        hitBomb,
+        null,
+        this
+      ).name = 'bombCollider';
       if (bombs.children) {
         bombs.children.iterate(child => {
           if (child) {
